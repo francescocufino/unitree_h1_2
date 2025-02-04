@@ -1,3 +1,5 @@
+#include <array>
+#include <thread>
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -22,6 +24,9 @@
 
 class Loco_arm_motion{
   private:
+    //flags
+    bool first_cb = false;
+    bool arm_initialized = false;
     //parameters
     const std::string kTopicArmSDK = "rt/arm_sdk";
     const std::string kTopicState = "rt/lowstate";
@@ -78,6 +83,19 @@ class Loco_arm_motion{
     const std::array<float, 15> kd_array = { 2.0, 2.0, 1.5, 1.0, 1.0, 1.0, 1.0, 
                                     2.0, 2.0, 1.5, 1.0, 1.0, 1.0, 1.0, 
                                     2.0 };
+    /*                                
+    const std::array<float, 15> kp_array = { 240, 240, 160, 100, 50, 50, 50, 
+                                    240, 240, 160, 100, 50, 50, 50, 
+                                    200 };
+    const std::array<float, 15> kd_array = { 2.0, 2.0, 1.5, 1.0, 1.0, 1.0, 1.0, 
+                                    2.0, 2.0, 1.5, 1.0, 1.0, 1.0, 1.0, 
+                                    2.0 };
+    */
+    const std::array<float, 15> init_pos{0.f, 0.3,  0.f, 0, 0, 0, 0,
+                                    0.f, -0.3, 0.f, 0, 0, 0, 0,
+                                    0.f};
+                                    //Joints command
+    std::array<float, 15> q_cmd{};
 
     const std::array<JointIndex, 15> arm_joints = {
         JointIndex::kLeftShoulderPitch,  JointIndex::kLeftShoulderRoll,
@@ -108,23 +126,23 @@ class Loco_arm_motion{
     std::shared_ptr<unitree_hg::msg::dds_::LowCmd_> msg;
     unitree::robot::ChannelSubscriberPtr<unitree_hg::msg::dds_::LowState_> low_state_subscriber;
     std::shared_ptr<unitree_hg::msg::dds_::LowState_> state_msg;
+
   public:
     Loco_arm_motion();
-    void walk(float, float, float, float);
+    void walk_temporized(float, float, float, float);
+    void walk(float, float, float);
+    void stop_walk();
     void initialize_arms();
     void move_arms_integral(std::array<float, 15>);
     void move_arms_polynomial(std::array<float, 15>, float);
     void stop_arms();
-
-
-
   };
 
 Loco_arm_motion::Loco_arm_motion(){
   client = std::make_shared<unitree::robot::h1::LocoClient>();  // Shared allocation  //Start loco client
-  //client->Init();
-  //client->SetTimeout(10.f);
-  //client->Start();
+  client->Init();
+  client->SetTimeout(10.f);
+  client->Start();
 
   //Start low cmd publisher and subscriber
 
@@ -137,6 +155,8 @@ Loco_arm_motion::Loco_arm_motion(){
       [&](const void *msg_ptr) {
           auto s = static_cast<const unitree_hg::msg::dds_::LowState_*>(msg_ptr);
           *state_msg = *s;  // Dereferencing shared_ptr to copy data
+          if(!first_cb){first_cb = true;}
+
       }, 
       1
   );
@@ -146,20 +166,16 @@ Loco_arm_motion::Loco_arm_motion(){
 
 
 void Loco_arm_motion::initialize_arms(){
-   std::array<float, 15> init_pos{0.f, 0.3,  0.f, 0, 0, 0, 0,
-                                     0.f, -0.3, 0.f, 0, 0, 0, 0,
-                                     0.f};
-
-  // wait for init
-  std::cout << "Press ENTER to init arms ...";
-  std::cin.get();
+  while(!first_cb) {std::this_thread::sleep_for(sleep_time);}
+  //std::cout << "Press ENTER to init arms ...";
+  //std::cin.get();
 
 
   // get current joint position
   std::array<float, 15> current_jpos{};
   std::cout<<"Current joint position: ";
   for (int i = 0; i < arm_joints.size(); ++i) {
-	current_jpos.at(i) = 0;//state_msg->motor_state().at(arm_joints.at(i)).q();
+	current_jpos.at(i) = state_msg->motor_state().at(arm_joints.at(i)).q();
 	std::cout << current_jpos.at(i) << " ";
   }
   std::cout << std::endl;
@@ -178,14 +194,13 @@ void Loco_arm_motion::initialize_arms(){
 
     // set control joints
     for (int j = 0; j < init_pos.size(); ++j) {
-      //std::cout << "q" << j << ": " << init_pos.at(j) * phase + current_jpos.at(j) * (1 - phase) << ' ';
-      msg->motor_cmd().at(arm_joints.at(j)).q(init_pos.at(j) * phase + current_jpos.at(j) * (1 - phase));
+      q_cmd.at(j) = init_pos.at(j) * phase + current_jpos.at(j) * (1 - phase);
+      msg->motor_cmd().at(arm_joints.at(j)).q(q_cmd.at(j));
       msg->motor_cmd().at(arm_joints.at(j)).dq(dq);
       msg->motor_cmd().at(arm_joints.at(j)).kp(kp_array.at(j));
       msg->motor_cmd().at(arm_joints.at(j)).kd(kd_array.at(j));
       msg->motor_cmd().at(arm_joints.at(j)).tau(tau_ff);
     }
-    //std::cout << std::endl;
 
     // send dds msg
     arm_sdk_publisher->Write(*msg);
@@ -193,37 +208,35 @@ void Loco_arm_motion::initialize_arms(){
     // sleep
     std::this_thread::sleep_for(sleep_time);
   }
-
-  std::cout << "Done!" << std::endl;
+  arm_initialized = true;
 }
 
+  
 void Loco_arm_motion::move_arms_integral(std::array<float, 15> target_pos){
+  if(!arm_initialized){std::cout << "Arms not initialized. Cannot perform arm motion\n"; return;}
 
-   std::cout << "Press ENTER to start arm ctrl ..." << std::endl;
-  std::cin.get();
+  //std::cout << "Press ENTER to start arm ctrl ..." << std::endl;
+  //std::cin.get();
 
   // start control
   std::cout << "Start arm ctrl!" << std::endl;
   float period = 5.f;
   int num_time_steps = static_cast<int>(period / control_dt);
 
-  std::array<float, 15> current_jpos_des{0.f, 0.3,  0.f, 0, 0, 0, 0,
-                                        0.f, -0.3, 0.f, 0, 0, 0, 0,
-                                        0.f};
 
   // lift arms up
   for (int i = 0; i < num_time_steps; ++i) {
     // update jpos des
     for (int j = 0; j < target_pos.size(); ++j) {
-      current_jpos_des.at(j) +=
-          std::clamp(target_pos.at(j) - current_jpos_des.at(j),
+      q_cmd.at(j) +=
+          std::clamp(target_pos.at(j) - q_cmd.at(j),
                      -max_joint_delta, max_joint_delta);
     }
 
     // set control joints
     for (int j = 0; j < target_pos.size(); ++j) {
       //std::cout << "q" << j << ": " << current_jpos_des.at(j) << ' ';
-      msg->motor_cmd().at(arm_joints.at(j)).q(current_jpos_des.at(j));
+      msg->motor_cmd().at(arm_joints.at(j)).q(q_cmd.at(j));
       msg->motor_cmd().at(arm_joints.at(j)).dq(dq);
       msg->motor_cmd().at(arm_joints.at(j)).kp(kp_array.at(j));
       msg->motor_cmd().at(arm_joints.at(j)).kd(kd_array.at(j));
@@ -240,18 +253,28 @@ void Loco_arm_motion::move_arms_integral(std::array<float, 15> target_pos){
 }
 
 void Loco_arm_motion::move_arms_polynomial(std::array<float, 15> q_f, float t_f){
+  if(!arm_initialized){std::cout << "Arms not initialized. Cannot perform arm motion\n"; return;}
+
   //Initial time
   float t = 0;
 
   //Initial configuration q_i
   std::array<float, 15> q_i{};
-  std::cout<<"Current joint position: ";
+  std::cout<<"Current joint position q: ";
+  std::cout << std::endl;
   for (int i = 0; i < arm_joints.size(); ++i) {
-	  q_i.at(i) = 0;//state_msg->motor_state().at(arm_joints.at(i)).q();
+    std::cout << "q" << i << ": " << state_msg->motor_state().at(arm_joints.at(i)).q() << ' ';
   }
+  std::cout << std::endl;
 
-  //Configuration to command which will be obtained through 5-th order polynomial
-  std::array<float, 15> q_cmd{};
+  std::cout<<"Planning from initial joint position q_i: ";
+  std::cout << std::endl;
+  for (int i = 0; i < arm_joints.size(); ++i) {
+	  q_i.at(i) = q_cmd.at(i);
+    std::cout << "q_i" << i << ": " << q_i.at(i) << ' ';
+  }
+  std::cout << std::endl;
+
 
   //Planning parameters
   std::array<float, 15> a0{}, a1{}, a2{}, a3{}, a4{}, a5{};
@@ -264,8 +287,8 @@ void Loco_arm_motion::move_arms_polynomial(std::array<float, 15> q_f, float t_f)
     a5.at(j) = (6*q_f.at(j) - 6*q_i.at(j))/pow(t_f, 5);
   }
 
-  std::cout << "Press ENTER to start arm ctrl poly..." << std::endl;
-  std::cin.get();
+  //std::cout << "Press ENTER to start arm ctrl poly..." << std::endl;
+  //std::cin.get();
 
   // start control
   std::cout << "Start arm ctrl poly!" << std::endl;
@@ -276,14 +299,14 @@ void Loco_arm_motion::move_arms_polynomial(std::array<float, 15> q_f, float t_f)
     //Commanding joints
     for (int j = 0; j < q_cmd.size(); ++j) {
       q_cmd.at(j) =a5.at(j)*pow(t,5) + a4.at(j)*pow(t,4) + a3.at(j)*pow(t,3) + a2.at(j)*pow(t,2)+ a1.at(j)*t + a0.at(j);
-      std::cout << "q" << j << ": " << q_cmd.at(j) << ' ';
+      //std::cout << "q" << j << ": " << q_cmd.at(j) << ' ';
       msg->motor_cmd().at(arm_joints.at(j)).q(q_cmd.at(j));
       msg->motor_cmd().at(arm_joints.at(j)).dq(dq);
       msg->motor_cmd().at(arm_joints.at(j)).kp(kp_array.at(j));
       msg->motor_cmd().at(arm_joints.at(j)).kd(kd_array.at(j));
       msg->motor_cmd().at(arm_joints.at(j)).tau(tau_ff);
     }
-    std::cout << std::endl;
+    //std::cout << std::endl;
 
     // send dds msg
     arm_sdk_publisher->Write(*msg);
@@ -320,8 +343,16 @@ void Loco_arm_motion::stop_arms(){
 }
 
 
-void Loco_arm_motion::walk(float vx, float vy, float vyaw, float duration){
+void Loco_arm_motion::walk_temporized(float vx, float vy, float vyaw, float duration){
   client->SetVelocity(vx, vy, vyaw, duration);
+}
+
+void Loco_arm_motion::walk(float vx, float vy, float vyaw){
+  client->Move(vx, vy, vyaw,1);
+}
+
+void Loco_arm_motion::stop_walk(){
+  client->StopMove();
 }
 
 
@@ -329,16 +360,32 @@ void Loco_arm_motion::walk(float vx, float vy, float vyaw, float duration){
 
 
 int main(int argc, char const *argv[]) {
-  unitree::robot::ChannelFactory::Instance()->Init(0);
-  Loco_arm_motion loco;
-  //loco.walk(0.3, 0, 0, 1);
-  //loco.initialize_arms();
-  std::array<float, 15> target_pos = {0.f, M_PI_2,  0.f, M_PI_2, 0, 0, 0,
+  std:: cout<<"Netw interface: " <<  argv[1] << "\n";
+  unitree::robot::ChannelFactory::Instance()->Init(0, argv[1]);
+
+   std::array<float, 15> target_pos = {0.f, M_PI_2,  0.f, M_PI_2, 0, 0, 0,
                                      0.f, -M_PI_2, 0.f, M_PI_2, 0, 0, 0,
                                      0.f};
-  //loco.move_arms_integral(target_pos);
-  loco.move_arms_polynomial(target_pos, 10);
+  std::array<float, 15> target_pos_2{0.f, 0.3,  0.f, 0, 0, 0, 0,
+                                      0.f, -0.3, 0.f, 0, 0, 0, 0,
+                                      0.f};
+
+  Loco_arm_motion loco;
+  //std::chrono::duration<int64_t, std::milli> sleep_time = std::chrono::milliseconds(static_cast<int>(5000));
+
+  loco.walk(0.1, 0, 0);
+  loco.initialize_arms();
+  loco.move_arms_polynomial(target_pos, 2);
+  loco.move_arms_polynomial(target_pos_2, 2);
   loco.stop_arms();
+  //std::this_thread::sleep_for(sleep_time);
+  loco.stop_walk();
+ 
+  //loco.move_arms_integral(target_pos);
+  //loco.move_arms_polynomial(target_pos, 2);
+  //loco.move_arms_polynomial(target_pos_2, 2);
+  //loco.walk_temporized(0.2, 0, 0, 2);
+  
 
     
 }

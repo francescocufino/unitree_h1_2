@@ -59,13 +59,12 @@ enum JointIndex {
 };
 
 int main(int argc, char const *argv[]) {
- // if (argc < 2) {
- //   std::cout << "Usage: " << argv[0] << " networkInterface" << std::endl;
- //   exit(-1);
- // }
+  if (argc < 2) {
+    std::cout << "Usage: " << argv[0] << " networkInterface" << std::endl;
+    exit(-1);
+  }
 
-  //unitree::robot::ChannelFactory::Instance()->Init(0, argv[1]);
-  unitree::robot::ChannelFactory::Instance()->Init(0);
+  unitree::robot::ChannelFactory::Instance()->Init(0, argv[1]);
   unitree::robot::ChannelPublisherPtr<unitree_hg::msg::dds_::LowCmd_>
       arm_sdk_publisher;
   unitree_hg::msg::dds_::LowCmd_ msg;
@@ -86,6 +85,7 @@ int main(int argc, char const *argv[]) {
   low_state_subscriber->InitChannel([&](const void *msg) {
         auto s = ( const unitree_hg::msg::dds_::LowState_* )msg;
         memcpy( &state_msg, s, sizeof( unitree_hg::msg::dds_::LowState_ ) );
+        //std::cout <<"cb triggered\n";
   }, 1);
 
   std::array<JointIndex, 15> arm_joints = {
@@ -151,17 +151,15 @@ int main(int argc, char const *argv[]) {
     msg.motor_cmd().at(JointIndex::kNotUsedJoint).q(weight);
     float phase = 1.0 * i / init_time_steps;
     //std::cout << "Phase: " << phase << std::endl;
-    
+
     // set control joints
     for (int j = 0; j < init_pos.size(); ++j) {
-      //std::cout << "q" << j << ": " << init_pos.at(j) * phase + current_jpos.at(j) * (1 - phase) << ' ';
       msg.motor_cmd().at(arm_joints.at(j)).q(init_pos.at(j) * phase + current_jpos.at(j) * (1 - phase));
       msg.motor_cmd().at(arm_joints.at(j)).dq(dq);
       msg.motor_cmd().at(arm_joints.at(j)).kp(kp_array.at(j));
       msg.motor_cmd().at(arm_joints.at(j)).kd(kd_array.at(j));
       msg.motor_cmd().at(arm_joints.at(j)).tau(tau_ff);
     }
-    //std::cout << std::endl;
 
     // send dds msg
     arm_sdk_publisher->Write(msg);
@@ -196,14 +194,12 @@ int main(int argc, char const *argv[]) {
 
     // set control joints
     for (int j = 0; j < init_pos.size(); ++j) {
-      //std::cout << "q" << j << ": " << current_jpos_des.at(j) << ' ';
       msg.motor_cmd().at(arm_joints.at(j)).q(current_jpos_des.at(j));
       msg.motor_cmd().at(arm_joints.at(j)).dq(dq);
       msg.motor_cmd().at(arm_joints.at(j)).kp(kp_array.at(j));
       msg.motor_cmd().at(arm_joints.at(j)).kd(kd_array.at(j));
       msg.motor_cmd().at(arm_joints.at(j)).tau(tau_ff);
     }
-    //std::cout << std::endl;
 
     // send dds msg
     arm_sdk_publisher->Write(msg);
