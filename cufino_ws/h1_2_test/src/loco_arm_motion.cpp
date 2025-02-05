@@ -16,7 +16,7 @@
 #include <unitree/robot/channel/channel_publisher.hpp>
 #include <unitree/robot/channel/channel_subscriber.hpp>
 
-#include <unitree/robot/h1/loco/h1_arm_motion.hpp>
+//#include <unitree/robot/h1/loco/h1_arm_motion.hpp>
 
 
 

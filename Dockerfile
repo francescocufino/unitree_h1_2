@@ -31,6 +31,7 @@ RUN make install
 USER user
 RUN make
 
+
 #Clean image
 USER root
 RUN rm -rf /var/lib/apt/lists/*
