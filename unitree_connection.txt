@@ -1,9 +1,0 @@
-See hosts on the Prisma lab network
-sudo nmap -T4 -sP 192.168.1.0/24
-
-See the IP address assigned to the unitree robot, which has mac address E4:FA:C4:4C:B2:F8 (the corresponding IP is written before)
-
-ssh unitree@<IP_ADDRESS>
-
-Username: unitree
-Password: Unitree0408

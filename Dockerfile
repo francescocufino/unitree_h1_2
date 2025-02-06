@@ -31,6 +31,14 @@ RUN make install
 USER user
 RUN make
 
+COPY --chown=user /cufino_ws_h1_2 ${HOME}/cufino_ws_h1_2
+
+WORKDIR ${HOME}/cufino_ws_h1_2/
+RUN mkdir build
+WORKDIR ${HOME}/cufino_ws_h1_2/build
+RUN cmake ..
+RUN make
+
 
 #Clean image
 USER root
