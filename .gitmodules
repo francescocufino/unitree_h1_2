@@ -1,0 +1,3 @@
+[submodule "cufino_ws_h1_2"]
+	path = cufino_ws_h1_2
+	url = https://github.com/francescocufino/cufino_ws_h1_2.git
