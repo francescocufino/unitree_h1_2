@@ -4,9 +4,9 @@ FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DISPLAY=:0
 
-#Instal essential, cmake and eigen
-RUN apt-get update && apt-get install -y build-essential libssl-dev wget sudo && apt-get -y install cmake protobuf-compiler && apt-get install -y libeigen3-dev  && apt-get clean 
-
+#Instal essential, cmake, eigen, and other dependencies
+RUN apt-get update && apt-get install -y build-essential libssl-dev wget sudo && apt-get -y install cmake protobuf-compiler && apt-get install -y libeigen3-dev && apt install -y libboost-all-dev && apt install -y libspdlog-dev  && apt-get clean 
+  
 
 
 
