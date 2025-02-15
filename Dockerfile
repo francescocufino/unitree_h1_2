@@ -4,11 +4,13 @@ FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DISPLAY=:0
 
-#Instal essential, cmake, eigen, and other dependencies
-RUN apt-get update && apt-get install -y build-essential libssl-dev wget sudo && apt-get -y install cmake protobuf-compiler && apt-get install -y libeigen3-dev && apt install -y libboost-all-dev && apt install -y libspdlog-dev  && apt-get clean 
+#Install essential
+RUN apt-get update && apt-get install -y build-essential libssl-dev wget sudo && apt-get -y install cmake protobuf-compiler  
   
-
-
+#Install other dependencies
+RUN apt-get install -y libeigen3-dev libboost-all-dev libspdlog-dev
+RUN apt-get install -y liborocos-kdl-dev libkdl-parser-dev
+RUN apt-get clean 
 
 #Add non root user using UID and GID passed as argument
 ENV HOME /home/user
