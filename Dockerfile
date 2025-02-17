@@ -24,6 +24,7 @@ USER user
 
 COPY --chown=user /unitree_sdk2 ${HOME}/unitree_sdk2
 
+#Compile unitree_skd2
 WORKDIR ${HOME}/unitree_sdk2
 RUN mkdir build
 WORKDIR ${HOME}/unitree_sdk2/build
@@ -35,6 +36,8 @@ RUN make
 
 COPY --chown=user /cufino_ws_h1_2 ${HOME}/cufino_ws_h1_2
 
+
+#Compile cufino_ws
 WORKDIR ${HOME}/cufino_ws_h1_2/
 RUN mkdir build
 WORKDIR ${HOME}/cufino_ws_h1_2/build
