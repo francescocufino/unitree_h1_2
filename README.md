@@ -39,8 +39,9 @@ Then log out and log in.
 ```sh
 git clone --recurse-submodules https://github.com/francescocufino/unitree_h1_2.git
 ```
-2.  Open a terminal in the repo and source the build file
+2.  Source the build file
 ```sh
+cd unitree_h1_2
 source docker_build.sh
 ```
 
