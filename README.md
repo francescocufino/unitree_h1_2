@@ -1,10 +1,10 @@
 <!-- GETTING STARTED -->
 ## Overview
 This repo contains the code for unitree h1_2 containarized with docker. The submodule cufino_ws_h1_2 is stand-alone and can be built also without docker. However, it is strongly suggest to follow this guide to have a containarized application. The code consists in four main folders:\
-- [h1_2_motion](https://github.com/francescocufino/cufino_ws_h1_2/h1_2_motion) contains the implementation of basic motions (arm, hands, locomotion) exploiting high level functionalitis of unitree_sdk2;
-- [h1_2_demo](https://github.com/francescocufino/cufino_ws_h1_2/h1_2_demo) contains an example user program based on h1_2_motion to perform whole body motion;
-- [h1_2_pushing](https://github.com/francescocufino/cufino_ws_h1_2/h1_2_pushing) contains the code under development for the wheelchair pushing project;
-- [h1_2_description](https://github.com/francescocufino/cufino_ws_h1_2/h1_2_description) contains a universal humanoid robot description (URDF & MJCF) for the [Unitree H1_2](https://www.unitree.com/h1), developed by [Unitree Robotics](https://www.unitree.com/).
+- [h1_2_motion](https://github.com/francescocufino/cufino_ws_h1_2/tree/main/h1_2_motion) contains the implementation of basic motions (arm, hands, locomotion) exploiting high level functionalitis of unitree_sdk2;
+- [h1_2_demo](https://github.com/francescocufino/cufino_ws_h1_2/tree/main/h1_2_demo) contains an example user program based on h1_2_motion to perform whole body motion;
+- [h1_2_pushing](https://github.com/francescocufino/cufino_ws_h1_2/tree/main/h1_2_pushing) contains the code under development for the wheelchair pushing project;
+- [h1_2_description](https://github.com/francescocufino/cufino_ws_h1_2/tree/main/h1_2_description) contains a universal humanoid robot description (URDF & MJCF) for the [Unitree H1_2](https://www.unitree.com/h1), developed by [Unitree Robotics](https://www.unitree.com/).
 
 
 ## Prerequisites
@@ -45,7 +45,7 @@ source docker_build.sh
 ```
 
 ## Subfolders
-From now, please refer to [README.MD](https://github.com/francescocufino/cufino_ws_h1_2/README.md)
+From now, please refer to [README.MD](https://github.com/francescocufino/cufino_ws_h1_2/tree/main/README.md)
 
 
 ## Development
