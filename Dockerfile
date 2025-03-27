@@ -22,6 +22,15 @@ RUN echo "user:user" | chpasswd
 RUN echo "user ALL=(ALL:ALL) ALL" >> /etc/sudoers
 USER user
 
+#Install ACADOS
+COPY --chown=user acados ${HOME}/acados
+#COPY dependencies/acados ${HOME}/acados
+RUN mkdir ${HOME}/acados/build
+WORKDIR ${HOME}/acados/build
+RUN cmake -DACADOS_WITH_QPOASES=ON ..
+RUN make install -j4
+RUN echo "source ${HOME}/acados/acados_env.sh" >> ${HOME}/.bashrc
+
 COPY --chown=user /unitree_sdk2 ${HOME}/unitree_sdk2
 
 #Compile unitree_skd2
