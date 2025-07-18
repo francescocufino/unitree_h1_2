@@ -16,6 +16,6 @@ target_link_libraries(h1_arm_sdk_dds_example unitree_sdk2)
 add_executable(h1_2_arm_sdk_dds_example high_level/h1_2_arm_sdk_dds_example.cpp)
 target_link_libraries(h1_2_arm_sdk_dds_example unitree_sdk2)
 
-add_executable(loco_arm_motion high_level/loco_arm_motion.cpp)
-target_link_libraries(loco_arm_motion unitree_sdk2)
+#add_executable(loco_arm_motion high_level/loco_arm_motion.cpp)
+#target_link_libraries(loco_arm_motion unitree_sdk2)
 

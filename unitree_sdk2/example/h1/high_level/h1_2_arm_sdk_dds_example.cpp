@@ -181,7 +181,7 @@ int main(int argc, char const *argv[]) {
 
   std::array<float, 15> current_jpos_des{0.f, 0.3,  0.f, 0, 0, 0, 0,
                                         0.f, -0.3, 0.f, 0, 0, 0, 0,
-                                        0.f};
+                                        0.0f};
 
   // lift arms up
   for (int i = 0; i < num_time_steps; ++i) {
