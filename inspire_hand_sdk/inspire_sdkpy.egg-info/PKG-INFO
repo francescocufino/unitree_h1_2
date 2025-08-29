@@ -1,0 +1,11 @@
+Metadata-Version: 1.2
+Name: inspire-sdkpy
+Version: 1.0.0
+Summary: Inspire Hand sdk for python
+Home-page: UNKNOWN
+Author: Unitree
+Author-email: unitree@unitree.com
+License: BSD-3-Clause
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires-Python: >=3.8

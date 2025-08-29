@@ -1,0 +1,7 @@
+PyQt5
+colorcet
+cyclonedds==0.10.2
+numpy
+pymodbus==3.6.9
+pyqtgraph
+pyserial
